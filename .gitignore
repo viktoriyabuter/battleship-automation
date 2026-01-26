@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.sqlite3
+
+# Virtual Environment
+.venv/
+env/
+venv/
+
+# Pytest / Allure
+.html
+.xml
+allure-results/
+allure-report/
+
+# Playwright
+playwright-report/
+.playwright/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
