@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from domain.enums.shot_result import ShotResult
-from typing import Tuple
 
 
 class BattleUIPort(ABC):
