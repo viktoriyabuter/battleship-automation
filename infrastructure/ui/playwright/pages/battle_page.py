@@ -1,8 +1,7 @@
 from playwright.sync_api import Page, TimeoutError, Locator
-
 from config import settings
-from domain.enums.game_result import GameResult
 from domain.enums.shot_result import ShotResult
+from domain.enums.game_result import GameResult
 
 
 class BattlePage:
@@ -26,14 +25,12 @@ class BattlePage:
 
     def get_game_result(self) -> GameResult | None:
         content = self.page.content()
-
         if settings.TEXT["victory"] in content:
             return GameResult.VICTORY
         if settings.TEXT["defeat"] in content:
             return GameResult.DEFEAT
         if settings.TEXT["opponent_left"] in content:
             return GameResult.OPPONENT_LEFT
-
         return None
 
     def wait_for_game_end(self) -> GameResult:
@@ -51,22 +48,17 @@ class BattlePage:
         result = self.get_game_result()
         if result is None:
             raise RuntimeError("Game finished but result was not detected")
-
         return result
 
     def shoot(self, x: int, y: int) -> ShotResult:
         cell = self._get_cell(x, y)
         cell.click()
-
         self._wait_for_cell_state_change(cell)
-
         classes = cell.get_attribute("class") or ""
-
         if "hit" in classes:
             return ShotResult.HIT
         if "miss" in classes:
             return ShotResult.MISS
-
         raise RuntimeError(f"Unknown shot result at ({x}, {y})")
 
     def _get_cell(self, x: int, y: int) -> Locator:
