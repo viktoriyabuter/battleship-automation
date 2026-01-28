@@ -18,5 +18,12 @@ BUTTON = {
     "start_game": "Играть",
 }
 
+END_GAME_TEXTS = (
+    TEXT["victory"],
+    TEXT["defeat"],
+    TEXT["opponent_left"],
+)
+
+
 CELL_SELECTOR = "[data-x='{x}'][data-y='{y}']"
 ALL_CELLS_SELECTOR = "[data-x][data-y]"
