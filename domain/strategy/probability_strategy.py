@@ -4,6 +4,7 @@ from .base_strategy import BaseStrategy
 
 Coordinate = Tuple[int, int]
 
+
 class ProbabilityStrategy(BaseStrategy):
     """
     Заглушка для продвинутой стратегии вероятности.
