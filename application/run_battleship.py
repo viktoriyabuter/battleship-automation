@@ -13,6 +13,7 @@ def main():
         page.goto(BASE_URL)
 
         start_page = StartPage(page)
+        start_page.random_place_ships()
         start_page.select_random_opponent()
         start_page.start_game()
 

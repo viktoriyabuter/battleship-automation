@@ -1,3 +1,4 @@
+import random
 from playwright.sync_api import Page
 
 
@@ -6,6 +7,7 @@ class StartPage:
         "a.battlefield-start-choose_rival-variant-link:has-text('случайный')"
     )
     START_GAME_BUTTON = "div.battlefield-start-button"
+    RANDOM_PLACEMENT_BUTTON = "li.placeships-variant.placeships-variant__randomly"  # локатор кнопки случайного размещения
 
     def __init__(self, page: Page):
         self.page = page
@@ -17,3 +19,14 @@ class StartPage:
     def start_game(self) -> None:
         self.page.wait_for_selector(self.START_GAME_BUTTON, timeout=30_000)
         self.page.click(self.START_GAME_BUTTON)
+
+    def random_place_ships(self) -> None:
+        num_clicks = random.randint(1, 15)
+
+        self.page.wait_for_selector(self.RANDOM_PLACEMENT_BUTTON, timeout=10_000)
+
+        for _ in range(num_clicks):
+            self.page.click(self.RANDOM_PLACEMENT_BUTTON)
+            self.page.wait_for_timeout(
+                500
+            )  # небольшая пауза между нажатиями, можно настроить по своему усмотрению
