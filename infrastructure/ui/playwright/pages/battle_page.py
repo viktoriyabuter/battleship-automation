@@ -43,14 +43,17 @@ class BattlePage:
         return result
 
     def get_game_result(self) -> GameResult | None:
-        """Определяем результат игры по тексту на странице."""
-        content = self.page.content()
-        if settings.TEXT["victory"] in content:
+        victory_selector = "div.notification__victory:not(.none)"
+        defeat_selector = "div.notification__defeat:not(.none)"
+        opponent_left_selector = self.RIVAL_LEAVE_NOTIFICATION
+
+        if self.page.locator(victory_selector).count() > 0:
             return GameResult.VICTORY
-        if settings.TEXT["defeat"] in content:
+        if self.page.locator(defeat_selector).count() > 0:
             return GameResult.DEFEAT
-        if settings.TEXT["opponent_left"] in content:
+        if self.page.locator(opponent_left_selector).count() > 0:
             return GameResult.OPPONENT_LEFT
+
         return None
 
     def shoot(self, x: int, y: int) -> ShotResult:
@@ -73,7 +76,6 @@ class BattlePage:
             )
 
             classes = last_cell.get_attribute("class") or ""
-            print(f"Last cell classes: {classes}")
 
             if "battlefield-cell__miss" in classes:
                 print("Shot result: MISS")
