@@ -7,7 +7,7 @@ class StartPage:
         "a.battlefield-start-choose_rival-variant-link:has-text('случайный')"
     )
     START_GAME_BUTTON = "div.battlefield-start-button"
-    RANDOM_PLACEMENT_BUTTON = "li.placeships-variant.placeships-variant__randomly"  # локатор кнопки случайного размещения
+    RANDOM_PLACEMENT_BUTTON = "li.placeships-variant.placeships-variant__randomly"
 
     def __init__(self, page: Page):
         self.page = page

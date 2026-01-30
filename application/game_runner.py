@@ -18,5 +18,5 @@ def run_game(ui):
         game_result: GameResult | None = ui.get_game_result()
         if game_result is not None:
             print(f"Игра завершена: {game_result.name}")
-            if game_result != GameResult.VICTORY:
+            if game_result != GameResult.WIN:
                 raise RuntimeError(f"Игра закончилась не победой: {game_result.name}")
