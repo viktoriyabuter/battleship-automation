@@ -7,12 +7,12 @@ from domain.enums.shot_result import ShotResult
 class BattlePage:
     MOVE_OFF_NOTIFICATION = "div.notification__move-off:not(.none)"
     MOVE_ON_NOTIFICATION = "div.notification__move-on:not(.none), div.notification__game-started-move-on:not(.none)"
-
     CELL_SELECTOR_OPPONENT = ".battlefield.battlefield__rival .battlefield-cell-content[data-x='{x}'][data-y='{y}']"
-
     RIVAL_LEAVE_NOTIFICATION = "div.notification__rival-leave:not(.none)"
     GAME_OVER_WIN_NOTIFICATION = "div.notification__game-over-win:not(.none)"
     GAME_OVER_LOSE_NOTIFICATION = "div.notification__game-over-lose:not(.none)"
+    FIELD_SELECTOR = ".battlefield.battlefield__rival"
+    LAST_SHOT_CELL = f"{FIELD_SELECTOR} .battlefield-cell__last"
 
     def __init__(self, page: Page):
         self.page = page
@@ -34,7 +34,6 @@ class BattlePage:
 
     def wait_for_game_end(self) -> GameResult:
         """Ждём конца игры, возвращаем результат."""
-        # Ждём появления любой нотификации конца игры
         self.page.wait_for_selector(
             f"{self.GAME_OVER_WIN_NOTIFICATION},"
             f" {self.GAME_OVER_LOSE_NOTIFICATION},"
@@ -59,34 +58,38 @@ class BattlePage:
         return None
 
     def shoot(self, x: int, y: int) -> ShotResult:
-        """Делаем выстрел по координатам (x, y) и ждём результата."""
         cell = self._get_cell(x, y)
+        print(f"Shooting at coordinates: x={x}, y={y}")  # Выводим координаты для дебага
         cell.first.click()
-
-        # Ждём изменения состояния последней клетки
         return self._wait_for_cell_state_change()
 
     def _get_cell(self, x: int, y: int) -> Locator:
         return self.page.locator(self.CELL_SELECTOR_OPPONENT.format(x=x, y=y))
 
     def _wait_for_cell_state_change(self) -> ShotResult:
-        selector = ".battlefield-cell__last"
-
         try:
-            last_cell = self.page.wait_for_selector(
-                selector, timeout=settings.WAIT_FOR_TURN_TIMEOUT
+            last_cell_td = self.page.wait_for_selector(
+                self.LAST_SHOT_CELL, timeout=settings.WAIT_FOR_TURN_TIMEOUT
             )
 
-            classes = last_cell.get_attribute("class") or ""
+            # Берём div внутри td через query_selector
+            last_cell_div = last_cell_td.query_selector("div.battlefield-cell-content")
+            x_coord = last_cell_div.get_attribute("data-x") if last_cell_div else None
+            y_coord = last_cell_div.get_attribute("data-y") if last_cell_div else None
+            print(f"Last shot cell coordinates: x={x_coord}, y={y_coord}")
 
-            if "battlefield-cell__miss" in classes:
+            # Класс td для результата выстрела
+            last_cell_class = last_cell_td.get_attribute("class") or ""
+            print(f"Last cell classes: {last_cell_class}") # Для отладки
+
+            if "battlefield-cell__miss" in last_cell_class:
                 print("Shot result: MISS")
                 return ShotResult.MISS
-            if "battlefield-cell__hit" in classes:
+            elif "battlefield-cell__hit" in last_cell_class:
                 print("Shot result: HIT")
                 return ShotResult.HIT
-
-            raise RuntimeError("Unknown shot result in last cell")
+            else:
+                raise RuntimeError("Unknown shot result in last cell")
 
         except TimeoutError:
             print("Timeout waiting for last cell to update")
