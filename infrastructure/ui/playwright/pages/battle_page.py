@@ -11,6 +11,10 @@ class BattlePage:
     RIVAL_LEAVE_NOTIFICATION = "div.notification__rival-leave:not(.none)"
     GAME_OVER_WIN_NOTIFICATION = "div.notification__game-over-win:not(.none)"
     GAME_OVER_LOSE_NOTIFICATION = "div.notification__game-over-lose:not(.none)"
+    LAST_CELL_SELECTOR_TEMPLATE = (
+        ".battlefield.battlefield__rival .battlefield-cell__last "
+        ".battlefield-cell-content[data-x='{x}'][data-y='{y}']"
+    )
 
     def __init__(self, page: Page):
         self.page = page
@@ -66,7 +70,7 @@ class BattlePage:
 
     def _get_last_cell_locator(self, x: int, y: int) -> Locator:
         return self.page.locator(
-            f".battlefield.battlefield__rival .battlefield-cell__last .battlefield-cell-content[data-y='{y}'][data-x='{x}']"
+            self.LAST_CELL_SELECTOR_TEMPLATE.format(x=x, y=y)
         )
 
     def _wait_for_cell_to_be_last(self, x: int, y: int) -> ShotResult:
