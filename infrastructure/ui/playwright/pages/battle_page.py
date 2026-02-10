@@ -7,7 +7,10 @@ from domain.enums.shot_result import ShotResult
 class BattlePage:
     MOVE_OFF_NOTIFICATION = "div.notification__move-off:not(.none)"
     MOVE_ON_NOTIFICATION = "div.notification__move-on:not(.none), div.notification__game-started-move-on:not(.none)"
-    CELL_SELECTOR_OPPONENT = ".battlefield.battlefield__rival .battlefield-cell-content[data-x='{x}'][data-y='{y}']"
+    EMPTY_CELL_SELECTOR_TEMPLATE = (
+        ".battlefield.battlefield__rival .battlefield-cell__empty "
+        ".battlefield-cell-content[data-x='{x}'][data-y='{y}']"
+    )
     RIVAL_LEAVE_NOTIFICATION = "div.notification__rival-leave:not(.none)"
     GAME_OVER_WIN_NOTIFICATION = "div.notification__game-over-win:not(.none)"
     GAME_OVER_LOSE_NOTIFICATION = "div.notification__game-over-lose:not(.none)"
@@ -60,18 +63,16 @@ class BattlePage:
         return None
 
     def shoot(self, x: int, y: int) -> ShotResult:
-        cell = self._get_cell(x, y)
+        cell = self._get_empty_cell(x, y)
         print(f"Shooting at coordinates: x={x}, y={y}")  # Выводим координаты для дебага
         cell.first.click()
-        return self._wait_for_cell_to_be_last(x,y)
+        return self._wait_for_cell_to_be_last(x, y)
 
-    def _get_cell(self, x: int, y: int) -> Locator:
-        return self.page.locator(self.CELL_SELECTOR_OPPONENT.format(x=x, y=y))
+    def _get_empty_cell(self, x: int, y: int) -> Locator:
+        return self.page.locator(self.EMPTY_CELL_SELECTOR_TEMPLATE.format(x=x, y=y))
 
     def _get_last_cell_locator(self, x: int, y: int) -> Locator:
-        return self.page.locator(
-            self.LAST_CELL_SELECTOR_TEMPLATE.format(x=x, y=y)
-        )
+        return self.page.locator(self.LAST_CELL_SELECTOR_TEMPLATE.format(x=x, y=y))
 
     def _wait_for_cell_to_be_last(self, x: int, y: int) -> ShotResult:
         cell_locator = self._get_last_cell_locator(x, y)
