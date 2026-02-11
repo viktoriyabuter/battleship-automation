@@ -12,7 +12,7 @@ class Settings:
 
     BROWSER: str = "chromium"
     HEADLESS: bool = False
-    BROWSER_ARGS: Tuple[str, ...] = ("--start-maximized", )
+    BROWSER_ARGS: Tuple[str, ...] = ("--start-maximized",)
     SLOW_MO: int = 0
 
     NO_VIEWPORT: bool = True
