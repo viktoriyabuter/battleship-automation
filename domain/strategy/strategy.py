@@ -79,11 +79,11 @@ class Strategy(BaseStrategy):
 
         return None
 
-    def process_result(self, coord: Coordinate, result: str):
+    def process_result(self, coord: Coordinate, result: ShotResult):
         if result == ShotResult.HIT:
             self.current_hits.append(coord)
         elif result == ShotResult.SUNK:
             self.current_hits.clear()
 
-    def register_result(self, coord: Coordinate, result: str):
+    def register_result(self, coord: Coordinate, result: ShotResult):
         self.process_result(coord, result)
