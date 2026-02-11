@@ -1,6 +1,7 @@
 import random
 from typing import List, Optional, Set
 
+from domain.enums.shot_result import ShotResult
 from domain.models.coordinate import Coordinate
 
 
@@ -78,14 +79,14 @@ class Strategy:
         return None
 
     def process_result(self, coord: Coordinate, result: str):
-        if result == "hit":
+        if result == ShotResult.HIT:
             self.current_hits.append(coord)
-        elif result == "sunk":
+        elif result == ShotResult.SUNK:
             self.current_hits.clear()
 
     def register_result(self, coord: Coordinate, result: str):
         result = result.lower().strip()
-        valid_results = {"hit", "miss", "sunk"}
+        valid_results = {ShotResult.HIT, ShotResult.MISS, ShotResult.SUNK}
         if result not in valid_results:
             raise ValueError(f"Unknown shot result: {result}")
 
