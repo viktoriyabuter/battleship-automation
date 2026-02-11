@@ -41,6 +41,12 @@ class BattlePage:
     }
     RIVAL_EMPTY_CELLS = f"{RIVAL_BATTLEFIELD} {EMPTY_CELL} {CELL_CONTENT}"
 
+    CELL_RESULT_CLASSES = {
+        ShotResult.MISS: "battlefield-cell__miss",
+        ShotResult.HIT: "battlefield-cell__hit",
+        ShotResult.SUNK: "battlefield-cell__done",
+    }
+
     def __init__(self, page: Page):
         self.page = page
 
@@ -70,22 +76,27 @@ class BattlePage:
         cell.first.wait_for(state="visible", timeout=5000)
         print(f"Shooting at: ({x},{y})")
         cell.first.click()
-        return self._wait_for_result(x, y)
+        return self.get_cell_status(x, y)
 
-    def _wait_for_result(self, x: int, y: int) -> ShotResult:
-        last_cell = self.page.locator(self.LAST_CELL_SELECTOR_TEMPLATE.format(x=x, y=y))
+    def get_cell_status(self, x: int, y: int) -> ShotResult:
+        last_cell = self.page.locator(
+            self.LAST_CELL_SELECTOR_TEMPLATE.format(x=x, y=y)
+        )
         last_cell.wait_for(state="visible", timeout=10000)
+
         td = last_cell.locator("..")
         cell_class = td.get_attribute("class") or ""
 
-        if "battlefield-cell__miss" in cell_class:
-            return ShotResult.MISS
-        if "battlefield-cell__hit" in cell_class:
-            if "battlefield-cell__done" in cell_class:
+        if self.CELL_RESULT_CLASSES[ShotResult.HIT] in cell_class:
+            if self.CELL_RESULT_CLASSES[ShotResult.SUNK] in cell_class:
                 return ShotResult.SUNK
             return ShotResult.HIT
 
+        if self.CELL_RESULT_CLASSES[ShotResult.MISS] in cell_class:
+            return ShotResult.MISS
+
         raise RuntimeError(f"Unknown result for cell ({x},{y})")
+
 
     def get_game_result(self) -> GameResult | None:
         if self.page.locator(self.GAME_OVER_NOTIFICATION["win"]).count():
