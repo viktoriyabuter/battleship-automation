@@ -1,22 +1,33 @@
-from domain.strategy.strategy_resolver import StrategyResolver
-from domain.enums.game_result import GameResult
-from domain.enums.shot_result import ShotResult
+from domain.strategy.strategy import Strategy
+from infrastructure.ui.playwright.pages.battle_page import BattlePage
 
 
-def run_game(ui):
+def run_game(ui: BattlePage):
+
+    strategy = Strategy(ui)
+
     ui.wait_for_opponent()
+    ui.wait_for_your_turn()
 
-    resolver = StrategyResolver()
+    while not ui.get_game_result():
+        x, y = strategy.choose_next_shot()
 
-    while True:
-        strategy = resolver.get_strategy()
-        coord = strategy.choose_next_shot()
+        print(f"Shooting at: ({x},{y})")
 
-        result: ShotResult = ui.shoot(*coord)
-        strategy.register_result(coord, result)
+        result = ui.shoot(x, y)
 
-        game_result: GameResult | None = ui.get_game_result()
-        if game_result is not None:
-            print(f"Игра завершена: {game_result.name}")
-            if game_result != GameResult.WIN:
-                raise RuntimeError(f"Игра закончилась не победой: {game_result.name}")
+        if result is None:
+            raise RuntimeError("Shoot returned None")
+
+        result_name = result.name.lower()
+
+        print(f"Result: {result_name}")
+
+        strategy.register_result((x, y), result_name)
+
+        if ui.get_game_result():
+            break
+
+        ui.wait_for_your_turn()
+
+    print("Game finished")

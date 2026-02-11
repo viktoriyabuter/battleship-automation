@@ -1,35 +1,44 @@
-from playwright.sync_api import Page, Locator, TimeoutError
+from typing import List
+from playwright.sync_api import Page
+
 from config import settings
 from domain.enums.game_result import GameResult
 from domain.enums.shot_result import ShotResult
+from domain.models.coordinate import Coordinate
 
 
 class BattlePage:
     MOVE_OFF_NOTIFICATION = "div.notification__move-off:not(.none)"
-    MOVE_ON_NOTIFICATION = "div.notification__move-on:not(.none), div.notification__game-started-move-on:not(.none)"
+    MOVE_ON_NOTIFICATION = (
+        "div.notification__move-on:not(.none), "
+        "div.notification__game-started-move-on:not(.none)"
+    )
+    RIVAL_EMPTY_CELLS = (
+        ".battlefield.battlefield__rival "
+        ".battlefield-cell__empty .battlefield-cell-content"
+    )
     EMPTY_CELL_SELECTOR_TEMPLATE = (
-        ".battlefield.battlefield__rival .battlefield-cell__empty "
+        ".battlefield.battlefield__rival "
+        ".battlefield-cell__empty "
         ".battlefield-cell-content[data-x='{x}'][data-y='{y}']"
     )
-    RIVAL_LEAVE_NOTIFICATION = "div.notification__rival-leave:not(.none)"
+    LAST_CELL_SELECTOR_TEMPLATE = (
+        ".battlefield.battlefield__rival "
+        ".battlefield-cell__last "
+        ".battlefield-cell-content[data-x='{x}'][data-y='{y}']"
+    )
     GAME_OVER_WIN_NOTIFICATION = "div.notification__game-over-win:not(.none)"
     GAME_OVER_LOSE_NOTIFICATION = "div.notification__game-over-lose:not(.none)"
-    LAST_CELL_SELECTOR_TEMPLATE = (
-        ".battlefield.battlefield__rival .battlefield-cell__last "
-        ".battlefield-cell-content[data-x='{x}'][data-y='{y}']"
-    )
+    RIVAL_LEAVE_NOTIFICATION = "div.notification__rival-leave:not(.none)"
 
     def __init__(self, page: Page):
         self.page = page
 
     def wait_for_opponent(self) -> None:
-        try:
-            self.page.wait_for_selector(
-                f"{self.MOVE_ON_NOTIFICATION}, {self.MOVE_OFF_NOTIFICATION}",
-                timeout=settings.WAIT_FOR_OPPONENT_TIMEOUT,
-            )
-        except TimeoutError as exc:
-            raise RuntimeError("Opponent did not connect / game did not start") from exc
+        self.page.wait_for_selector(
+            f"{self.MOVE_ON_NOTIFICATION}, {self.MOVE_OFF_NOTIFICATION}",
+            timeout=settings.WAIT_FOR_OPPONENT_TIMEOUT,
+        )
 
     def wait_for_your_turn(self) -> None:
         self.page.wait_for_selector(
@@ -37,89 +46,46 @@ class BattlePage:
             timeout=settings.WAIT_FOR_TURN_TIMEOUT,
         )
 
-    def wait_for_game_end(self) -> GameResult:
-        """Ждём конца игры, возвращаем результат."""
-        self.page.wait_for_selector(
-            f"{self.GAME_OVER_WIN_NOTIFICATION},"
-            f" {self.GAME_OVER_LOSE_NOTIFICATION},"
-            f" {self.RIVAL_LEAVE_NOTIFICATION}",
-            timeout=settings.WAIT_FOR_GAME_END_TIMEOUT,
-        )
+    def get_empty_cells(self) -> List[Coordinate]:
+        cells: List[Coordinate] = []
+        elements = self.page.locator(self.RIVAL_EMPTY_CELLS).all()
+        for el in elements:
+            x = int(el.get_attribute("data-x"))
+            y = int(el.get_attribute("data-y"))
+            cells.append((x, y))
 
-        result = self.get_game_result()
-        if result is None:
-            raise RuntimeError("Game finished but result was not detected")
-        return result
-
-    # --- Определение результата игры через локаторы ---
-    def get_game_result(self) -> GameResult | None:
-        """Определяем результат игры по видимым нотификациям."""
-        if self.page.locator(self.GAME_OVER_WIN_NOTIFICATION).count() > 0:
-            return GameResult.WIN
-        if self.page.locator(self.GAME_OVER_LOSE_NOTIFICATION).count() > 0:
-            return GameResult.LOSE
-        if self.page.locator(self.RIVAL_LEAVE_NOTIFICATION).count() > 0:
-            return GameResult.OPPONENT_LEFT
-        return None
+        return cells
 
     def shoot(self, x: int, y: int) -> ShotResult:
-        cell = self._get_empty_cell(x, y)
-        print(f"Shooting at coordinates: x={x}, y={y}")  # Выводим координаты для дебага
+        selector = self.EMPTY_CELL_SELECTOR_TEMPLATE.format(x=x, y=y)
+        cell = self.page.locator(selector)
+        cell.first.wait_for(state="visible", timeout=5000)
+        print(f"Shooting at: ({x},{y})")
         cell.first.click()
-        return self._wait_for_cell_to_be_last(x, y)
+        return self._wait_for_result(x, y)
 
-    def _get_empty_cell(self, x: int, y: int) -> Locator:
-        return self.page.locator(self.EMPTY_CELL_SELECTOR_TEMPLATE.format(x=x, y=y))
+    # ------------------------------------------------
 
-    def _get_last_cell_locator(self, x: int, y: int) -> Locator:
-        return self.page.locator(self.LAST_CELL_SELECTOR_TEMPLATE.format(x=x, y=y))
+    def _wait_for_result(self, x: int, y: int) -> ShotResult:
+        last_cell = self.page.locator(self.LAST_CELL_SELECTOR_TEMPLATE.format(x=x, y=y))
+        last_cell.wait_for(state="visible", timeout=10000)
+        td = last_cell.locator("..")
+        cell_class = td.get_attribute("class") or ""
+        if "battlefield-cell__miss" in cell_class:
+            return ShotResult.MISS
+        if "battlefield-cell__hit" in cell_class:
+            if "battlefield-cell__done" in cell_class:
+                return ShotResult.SUNK
+            return ShotResult.HIT
 
-    def _wait_for_cell_to_be_last(self, x: int, y: int) -> ShotResult:
-        cell_locator = self._get_last_cell_locator(x, y)
+        raise RuntimeError(f"Unknown result for cell ({x},{y})")
 
-        try:
-            td_locator = cell_locator.locator("..")  # .. означает родителя в CSS
-            print(f"Waiting for td cell to be...{td_locator}")
-            # Берём класс родительского td
-            cell_class = td_locator.get_attribute("class") or ""
-            print(f"Cell ({x},{y}) classes (td): {cell_class}")
+    def get_game_result(self) -> GameResult | None:
+        if self.page.locator(self.GAME_OVER_WIN_NOTIFICATION).count():
+            return GameResult.WIN
+        if self.page.locator(self.GAME_OVER_LOSE_NOTIFICATION).count():
+            return GameResult.LOSE
+        if self.page.locator(self.RIVAL_LEAVE_NOTIFICATION).count():
+            return GameResult.OPPONENT_LEFT
 
-            if "battlefield-cell__hit" in cell_class:
-                return ShotResult.HIT
-            elif "battlefield-cell__miss" in cell_class:
-                return ShotResult.MISS
-            else:
-                raise RuntimeError(f"Unknown shot result in cell ({x},{y})")
-
-        except Exception as e:
-            print(f"Error while checking cell ({x},{y}): {e}")
-            raise
-
-    def play_turn(self, x: int, y: int) -> ShotResult | None:
-        """Полный цикл для хода: проверяем игру, выстрел, ожидание, проверка."""
-        # Проверяем, не закончилась ли игра
-        game_result = self.get_game_result()
-        if game_result is not None:
-            print(f"Game finished: {game_result.name}")
-            return None  # Игра закончена, ход делать нельзя
-
-        # Совершаем выстрел
-        shot_result = self.shoot(x, y)
-        print(f"Shot result: {shot_result.name}")
-
-        # Ждём конца хода противника
-        self.page.wait_for_selector(
-            self.MOVE_OFF_NOTIFICATION, timeout=settings.WAIT_FOR_TURN_TIMEOUT
-        )
-
-        # Ждём, когда снова будет наш ход
-        self.page.wait_for_selector(
-            self.MOVE_ON_NOTIFICATION, timeout=settings.WAIT_FOR_TURN_TIMEOUT
-        )
-
-        # Проверяем, не закончилась ли игра после хода противника
-        game_result = self.get_game_result()
-        if game_result is not None:
-            print(f"Game finished: {game_result.name}")
-
-        return shot_result
+        return None
