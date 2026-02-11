@@ -16,7 +16,6 @@ class Settings:
     SLOW_MO: int = 0
 
     CELL_SELECTOR: str = "[data-x='{x}'][data-y='{y}']"
-    ALL_CELLS_SELECTOR: str = "[data-x][data-y]"
 
 
 settings = Settings()

@@ -74,7 +74,6 @@ class BattlePage:
         selector = self.EMPTY_CELL_SELECTOR_TEMPLATE.format(x=x, y=y)
         cell = self.page.locator(selector)
         cell.first.wait_for(state="visible", timeout=5000)
-        print(f"Shooting at: ({x},{y})")
         cell.first.click()
         return self.get_cell_status(x, y)
 
