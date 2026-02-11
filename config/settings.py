@@ -1,29 +1,22 @@
-BASE_URL = "http://ru.battleship-game.org"
-
-WAIT_FOR_OPPONENT_TIMEOUT = 30_000
-WAIT_FOR_TURN_TIMEOUT = 30_000
-WAIT_FOR_GAME_END_TIMEOUT = 30_000
-
-TEXT = {
-    "your_turn": "Ваш ход",
-    "opponent_turn": "Противник ходит",
-    "victory": "Поздравляем, вы победили",
-    "defeat": "Вы проиграли",
-    "opponent_left": "Противник покинул игру",
-}
-
-BUTTON = {
-    "random_opponent": "Случайный соперник",
-    "randomize_ships": "Случайным образом",
-    "start_game": "Играть",
-}
-
-END_GAME_TEXTS = (
-    TEXT["victory"],
-    TEXT["defeat"],
-    TEXT["opponent_left"],
-)
+from dataclasses import dataclass
+from typing import Tuple
 
 
-CELL_SELECTOR = "[data-x='{x}'][data-y='{y}']"
-ALL_CELLS_SELECTOR = "[data-x][data-y]"
+@dataclass(frozen=True)
+class Settings:
+    BASE_URL: str = "http://ru.battleship-game.org"
+
+    WAIT_FOR_OPPONENT_TIMEOUT: int = 30_000
+    WAIT_FOR_TURN_TIMEOUT: int = 30_000
+    WAIT_FOR_GAME_END_TIMEOUT: int = 30_000
+
+    BROWSER: str = "chromium"
+    HEADLESS: bool = False
+    BROWSER_ARGS: Tuple[str, ...] = ("--start-maximized",)
+    SLOW_MO: int = 0
+
+    CELL_SELECTOR: str = "[data-x='{x}'][data-y='{y}']"
+    ALL_CELLS_SELECTOR: str = "[data-x][data-y]"
+
+
+settings = Settings()
