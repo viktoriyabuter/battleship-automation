@@ -1,49 +1,58 @@
 from typing import List
 from playwright.sync_api import Page
-
-from config.settings import settings
-from domain.enums.game_result import GameResult
 from domain.enums.shot_result import ShotResult
+from domain.enums.game_result import GameResult
 from domain.models.coordinate import Coordinate
+from config.settings import settings
 
 
 class BattlePage:
-    MOVE_OFF_NOTIFICATION = "div.notification__move-off:not(.none)"
-    MOVE_ON_NOTIFICATION = (
-        "div.notification__move-on:not(.none), "
-        "div.notification__game-started-move-on:not(.none)"
+    RIVAL_BATTLEFIELD = ".battlefield.battlefield__rival"
+    EMPTY_CELL = ".battlefield-cell__empty"
+    LAST_CELL = ".battlefield-cell__last"
+    CELL_CONTENT = ".battlefield-cell-content"
+
+    CELL_SELECTOR_TEMPLATE = (
+        "{battlefield} {cell_type} {content}[data-x='{x}'][data-y='{y}']"
     )
-    RIVAL_EMPTY_CELLS = (
-        ".battlefield.battlefield__rival "
-        ".battlefield-cell__empty .battlefield-cell-content"
+
+    EMPTY_CELL_SELECTOR_TEMPLATE = CELL_SELECTOR_TEMPLATE.format(
+        battlefield=RIVAL_BATTLEFIELD,
+        cell_type=EMPTY_CELL,
+        content=CELL_CONTENT,
+        x="{x}",
+        y="{y}",
     )
-    EMPTY_CELL_SELECTOR_TEMPLATE = (
-        ".battlefield.battlefield__rival "
-        ".battlefield-cell__empty "
-        ".battlefield-cell-content[data-x='{x}'][data-y='{y}']"
+    LAST_CELL_SELECTOR_TEMPLATE = CELL_SELECTOR_TEMPLATE.format(
+        battlefield=RIVAL_BATTLEFIELD,
+        cell_type=LAST_CELL,
+        content=CELL_CONTENT,
+        x="{x}",
+        y="{y}",
     )
-    LAST_CELL_SELECTOR_TEMPLATE = (
-        ".battlefield.battlefield__rival "
-        ".battlefield-cell__last "
-        ".battlefield-cell-content[data-x='{x}'][data-y='{y}']"
-    )
-    GAME_OVER_WIN_NOTIFICATION = "div.notification__game-over-win:not(.none)"
-    GAME_OVER_LOSE_NOTIFICATION = "div.notification__game-over-lose:not(.none)"
-    RIVAL_LEAVE_NOTIFICATION = "div.notification__rival-leave:not(.none)"
+    MOVE_NOTIFICATION = {
+        "on": "div.notification__move-on:not(.none), div.notification__game-started-move-on:not(.none)",
+        "off": "div.notification__move-off:not(.none)",
+    }
+    GAME_OVER_NOTIFICATION = {
+        "win": "div.notification__game-over-win:not(.none)",
+        "lose": "div.notification__game-over-lose:not(.none)",
+        "opponent_left": "div.notification__rival-leave:not(.none)",
+    }
+    RIVAL_EMPTY_CELLS = f"{RIVAL_BATTLEFIELD} {EMPTY_CELL} {CELL_CONTENT}"
 
     def __init__(self, page: Page):
         self.page = page
 
-    def wait_for_opponent(self) -> None:
+    def wait_for_opponent(self):
         self.page.wait_for_selector(
-            f"{self.MOVE_ON_NOTIFICATION}, {self.MOVE_OFF_NOTIFICATION}",
+            f"{self.MOVE_NOTIFICATION['on']}, {self.MOVE_NOTIFICATION['off']}",
             timeout=settings.WAIT_FOR_OPPONENT_TIMEOUT,
         )
 
-    def wait_for_your_turn(self) -> None:
+    def wait_for_your_turn(self):
         self.page.wait_for_selector(
-            self.MOVE_ON_NOTIFICATION,
-            timeout=settings.WAIT_FOR_TURN_TIMEOUT,
+            self.MOVE_NOTIFICATION["on"], timeout=settings.WAIT_FOR_TURN_TIMEOUT
         )
 
     def get_empty_cells(self) -> List[Coordinate]:
@@ -53,7 +62,6 @@ class BattlePage:
             x = int(el.get_attribute("data-x"))
             y = int(el.get_attribute("data-y"))
             cells.append((x, y))
-
         return cells
 
     def shoot(self, x: int, y: int) -> ShotResult:
@@ -69,6 +77,7 @@ class BattlePage:
         last_cell.wait_for(state="visible", timeout=10000)
         td = last_cell.locator("..")
         cell_class = td.get_attribute("class") or ""
+
         if "battlefield-cell__miss" in cell_class:
             return ShotResult.MISS
         if "battlefield-cell__hit" in cell_class:
@@ -79,11 +88,10 @@ class BattlePage:
         raise RuntimeError(f"Unknown result for cell ({x},{y})")
 
     def get_game_result(self) -> GameResult | None:
-        if self.page.locator(self.GAME_OVER_WIN_NOTIFICATION).count():
+        if self.page.locator(self.GAME_OVER_NOTIFICATION["win"]).count():
             return GameResult.WIN
-        if self.page.locator(self.GAME_OVER_LOSE_NOTIFICATION).count():
+        if self.page.locator(self.GAME_OVER_NOTIFICATION["lose"]).count():
             return GameResult.LOSE
-        if self.page.locator(self.RIVAL_LEAVE_NOTIFICATION).count():
+        if self.page.locator(self.GAME_OVER_NOTIFICATION["opponent_left"]).count():
             return GameResult.OPPONENT_LEFT
-
         return None
