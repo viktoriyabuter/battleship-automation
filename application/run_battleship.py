@@ -12,7 +12,8 @@ def main():
             args=list(settings.BROWSER_ARGS),
             slow_mo=settings.SLOW_MO,
         )
-        page = browser.new_page()
+        context = browser.new_context(no_viewport=settings.NO_VIEWPORT)
+        page = context.new_page()
         page.goto(settings.BASE_URL)
 
         start_page = StartPage(page)
