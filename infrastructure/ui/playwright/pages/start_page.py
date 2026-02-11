@@ -27,6 +27,4 @@ class StartPage:
 
         for _ in range(num_clicks):
             self.page.click(self.RANDOM_PLACEMENT_BUTTON)
-            self.page.wait_for_timeout(
-                500
-            )  # небольшая пауза между нажатиями, можно настроить по своему усмотрению
+            self.page.wait_for_timeout(500)
