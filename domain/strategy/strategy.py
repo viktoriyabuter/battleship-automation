@@ -3,9 +3,10 @@ from typing import List, Optional, Set
 
 from domain.enums.shot_result import ShotResult
 from domain.models.coordinate import Coordinate
+from domain.strategy.base_strategy import BaseStrategy
 
 
-class Strategy:
+class Strategy(BaseStrategy):
 
     def __init__(self, page):
         self.page = page
