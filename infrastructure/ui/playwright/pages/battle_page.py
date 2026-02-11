@@ -1,5 +1,5 @@
 from typing import List
-from playwright.sync_api import Page
+from playwright.sync_api import Page, Error
 from domain.enums.shot_result import ShotResult
 from domain.enums.game_result import GameResult
 from domain.models.coordinate import Coordinate
@@ -31,13 +31,15 @@ class BattlePage:
         y="{y}",
     )
     MOVE_NOTIFICATION = {
-        "on": "div.notification__move-on:not(.none), div.notification__game-started-move-on:not(.none)",
+        "on": "div.notification__move-on:not(.none), "
+        "div.notification__game-started-move-on:not(.none)",
         "off": "div.notification__move-off:not(.none)",
     }
     GAME_OVER_NOTIFICATION = {
         "win": "div.notification__game-over-win:not(.none)",
         "lose": "div.notification__game-over-lose:not(.none)",
         "opponent_left": "div.notification__rival-leave:not(.none)",
+        "server_error": "div.notification__server-error:not(.none)",
     }
     RIVAL_EMPTY_CELLS = f"{RIVAL_BATTLEFIELD} {EMPTY_CELL} {CELL_CONTENT}"
 
@@ -56,10 +58,19 @@ class BattlePage:
             timeout=settings.WAIT_FOR_OPPONENT_TIMEOUT,
         )
 
-    def wait_for_your_turn(self):
-        self.page.wait_for_selector(
-            self.MOVE_NOTIFICATION["on"], timeout=settings.WAIT_FOR_TURN_TIMEOUT
+    def wait_for_game_event(self) -> GameResult | None:
+        selector = ", ".join(
+            [self.MOVE_NOTIFICATION["on"], *self.GAME_OVER_NOTIFICATION.values()]
         )
+
+        try:
+            self.page.wait_for_selector(
+                selector, timeout=settings.WAIT_FOR_TURN_TIMEOUT
+            )
+        except Error:
+            raise RuntimeError("Timeout while waiting for your turn")
+
+        return self.get_game_result()
 
     def get_empty_cells(self) -> List[Coordinate]:
         cells: List[Coordinate] = []
@@ -101,4 +112,6 @@ class BattlePage:
             return GameResult.LOSE
         if self.page.locator(self.GAME_OVER_NOTIFICATION["opponent_left"]).count():
             return GameResult.OPPONENT_LEFT
+        if self.page.locator(self.GAME_OVER_NOTIFICATION["server_error"]).count():
+            return GameResult.SERVER_ERROR
         return None
