@@ -1,7 +1,7 @@
 from typing import List
 from playwright.sync_api import Page
 
-from config import settings
+from config.settings import settings
 from domain.enums.game_result import GameResult
 from domain.enums.shot_result import ShotResult
 from domain.models.coordinate import Coordinate
@@ -63,8 +63,6 @@ class BattlePage:
         print(f"Shooting at: ({x},{y})")
         cell.first.click()
         return self._wait_for_result(x, y)
-
-    # ------------------------------------------------
 
     def _wait_for_result(self, x: int, y: int) -> ShotResult:
         last_cell = self.page.locator(self.LAST_CELL_SELECTOR_TEMPLATE.format(x=x, y=y))
