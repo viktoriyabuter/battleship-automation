@@ -86,9 +86,4 @@ class Strategy(BaseStrategy):
             self.current_hits.clear()
 
     def register_result(self, coord: Coordinate, result: str):
-        result = result.lower().strip()
-        valid_results = {ShotResult.HIT, ShotResult.MISS, ShotResult.SUNK}
-        if result not in valid_results:
-            raise ValueError(f"Unknown shot result: {result}")
-
         self.process_result(coord, result)

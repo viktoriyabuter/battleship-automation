@@ -18,12 +18,8 @@ def run_game(ui: BattlePage):
 
         if result is None:
             raise RuntimeError("Shoot returned None")
-
-        result_name = result.name.lower()
-
-        print(f"Result: {result_name}")
-
-        strategy.register_result((x, y), result_name)
+        print(f"Result: {result.name}")
+        strategy.register_result((x, y), result)
 
         if ui.get_game_result():
             break
