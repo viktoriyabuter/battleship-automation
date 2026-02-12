@@ -47,12 +47,13 @@ Once the bot registers a hit, it switches behavior:
 1. Launch the browser and open the Battleship website.
 2. Wait for an opponent.
 3. Wait for the bot's turn.
-4. Collect available (**empty**) enemy cells.
+4. Collect available (empty) enemy cells.
 5. Shoot using the checkerboard pattern.
 6. If a hit is detected — switch to destroy phase.
 7. Resume search phase after the ship is sunk.
 8. Repeat until the game ends.
 
 ---
+
 
 
