@@ -1,7 +1,8 @@
 # Battleship Automation 🎯
 
-Automation bot for the online **Battleship** game built with **Python** and **Playwright**.
-The bot launches a browser, joins a match, waits for its turn, and automatically shoots at available cells using strategy.
+Automation bot for the online Battleship game built with Python and Playwright.
+The bot launches a browser, joins a match, places ships automatically, selects a random player, 
+waits for its turn, and shoots at available cells using strategy.
 
 ---
 
@@ -53,3 +54,4 @@ Once the bot registers a hit, it switches behavior:
 8. Repeat until the game ends.
 
 ---
+
