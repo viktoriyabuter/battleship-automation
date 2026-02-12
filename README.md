@@ -9,7 +9,7 @@ waits for its turn, and shoots at available cells using strategy.
 ## 🚀 How to Run
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/viktoriyabuter/battleship-automation
 cd battleship-automation
 
 python -m venv .venv
@@ -54,4 +54,5 @@ Once the bot registers a hit, it switches behavior:
 8. Repeat until the game ends.
 
 ---
+
 
