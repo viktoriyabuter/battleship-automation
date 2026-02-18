@@ -1,12 +1,13 @@
-from typing import List
+from typing import List, Optional
 from playwright.sync_api import Page, Error
 from domain.enums.shot_result import ShotResult
 from domain.enums.game_result import GameResult
 from domain.models.coordinate import Coordinate
 from config.settings import settings
+from domain.interfaces.game_ui import GameUI
 
 
-class BattlePage:
+class BattlePage(GameUI):
     RIVAL_BATTLEFIELD = ".battlefield.battlefield__rival"
     EMPTY_CELL = ".battlefield-cell__empty"
     LAST_CELL = ".battlefield-cell__last"
@@ -50,15 +51,15 @@ class BattlePage:
     }
 
     def __init__(self, page: Page):
-        self.page = page
+        self.page: Page = page
 
-    def wait_for_opponent(self):
+    def wait_for_opponent(self) -> None:
         self.page.wait_for_selector(
             f"{self.MOVE_NOTIFICATION['on']}, {self.MOVE_NOTIFICATION['off']}",
             timeout=settings.WAIT_FOR_OPPONENT_TIMEOUT,
         )
 
-    def wait_for_game_event(self) -> GameResult | None:
+    def wait_for_game_event(self) -> Optional[GameResult]:
         selector = ", ".join(
             [self.MOVE_NOTIFICATION["on"], *self.GAME_OVER_NOTIFICATION.values()]
         )
@@ -105,7 +106,7 @@ class BattlePage:
 
         raise RuntimeError(f"Unknown result for cell ({x},{y})")
 
-    def get_game_result(self) -> GameResult | None:
+    def get_game_result(self) -> Optional[GameResult]:
         if self.page.locator(self.GAME_OVER_NOTIFICATION["win"]).count():
             return GameResult.WIN
         if self.page.locator(self.GAME_OVER_NOTIFICATION["lose"]).count():
