@@ -6,7 +6,7 @@ from config.settings import settings
 
 class StartPage:
     RANDOM_OPPONENT_BUTTON = (
-        "a.battlefield-start-choose_rival-variant-link:has-text('случайный')"
+        "a.battlefield-start-choose_rival-variant-link"
     )
     START_GAME_BUTTON = "div.battlefield-start-button"
     RANDOM_PLACEMENT_BUTTON = "li.placeships-variant.placeships-variant__randomly"
