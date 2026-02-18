@@ -5,6 +5,7 @@ from domain.models.coordinate import Coordinate
 from config.settings import settings
 from domain.interfaces.game_ui import GameUI
 from infrastructure.ui.playwright.pages.base_page import BasePage
+from utils.utils import coord_to_battleship_notation
 
 
 class BattlePage(BasePage, GameUI):
@@ -88,7 +89,9 @@ class BattlePage(BasePage, GameUI):
         if self.CELL_RESULT_CLASSES[ShotResult.MISS] in cell_class:
             return ShotResult.MISS
 
-        raise RuntimeError(f"Unknown result for cell ({x},{y})")
+        raise RuntimeError(
+            f"Unknown result for cell {coord_to_battleship_notation((x, y))}"
+        )
 
     def get_game_result(self) -> Optional[GameResult]:
         for key, value in self.GAME_OVER_NOTIFICATION.items():
