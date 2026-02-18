@@ -1,15 +1,12 @@
 import random
-from playwright.sync_api import Page
 from config.settings import settings
+from infrastructure.ui.playwright.pages.base_page import BasePage
 
 
-class StartPage:
+class StartPage(BasePage):
     RANDOM_OPPONENT_BUTTON = "a.battlefield-start-choose_rival-variant-link"
     START_GAME_BUTTON = "div.battlefield-start-button"
     RANDOM_PLACEMENT_BUTTON = "li.placeships-variant.placeships-variant__randomly"
-
-    def __init__(self, page: Page) -> None:
-        self.page = page
 
     def open(self) -> None:
         self.page.goto(settings.BASE_URL)
@@ -27,14 +24,3 @@ class StartPage:
         for _ in range(num_clicks):
             self._click(self.RANDOM_PLACEMENT_BUTTON)
             self.page.wait_for_timeout(500)
-
-    def _get_element(self, selector: str):
-        self._wait_for_selector(selector)
-        return self.page.locator(selector)
-
-    def _click(self, selector: str, timeout: int = 5_000) -> None:
-        element = self._get_element(selector)
-        element.first.click(timeout=timeout)
-
-    def _wait_for_selector(self, selector: str, timeout: int = 5_000) -> None:
-        self.page.wait_for_selector(selector, timeout=timeout)

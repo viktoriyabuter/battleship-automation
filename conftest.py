@@ -19,9 +19,7 @@ def browser():
 
 @pytest.fixture(scope="function")
 def battle_page(browser):
-    context = browser.new_context(
-        no_viewport=settings.NO_VIEWPORT
-    )
+    context = browser.new_context(no_viewport=settings.NO_VIEWPORT)
 
     page = context.new_page()
 

@@ -1,13 +1,13 @@
 from typing import List, Optional
-from playwright.sync_api import Page, Error
 from domain.enums.shot_result import ShotResult
 from domain.enums.game_result import GameResult
 from domain.models.coordinate import Coordinate
 from config.settings import settings
 from domain.interfaces.game_ui import GameUI
+from infrastructure.ui.playwright.pages.base_page import BasePage
 
 
-class BattlePage(GameUI):
+class BattlePage(BasePage, GameUI):
     RIVAL_BATTLEFIELD = ".battlefield.battlefield__rival"
     EMPTY_CELL = ".battlefield-cell__empty"
     LAST_CELL = ".battlefield-cell__last"
@@ -32,8 +32,7 @@ class BattlePage(GameUI):
         y="{y}",
     )
     MOVE_NOTIFICATION = {
-        "on": "div.notification__move-on:not(.none), "
-        "div.notification__game-started-move-on:not(.none)",
+        "on": "div.notification__move-on:not(.none), div.notification__game-started-move-on:not(.none)",
         "off": "div.notification__move-off:not(.none)",
     }
     GAME_OVER_NOTIFICATION = {
@@ -50,11 +49,8 @@ class BattlePage(GameUI):
         ShotResult.SUNK: "battlefield-cell__done",
     }
 
-    def __init__(self, page: Page):
-        self.page: Page = page
-
     def wait_for_opponent(self) -> None:
-        self.page.wait_for_selector(
+        self._wait_for_selector(
             f"{self.MOVE_NOTIFICATION['on']}, {self.MOVE_NOTIFICATION['off']}",
             timeout=settings.WAIT_FOR_OPPONENT_TIMEOUT,
         )
@@ -63,36 +59,24 @@ class BattlePage(GameUI):
         selector = ", ".join(
             [self.MOVE_NOTIFICATION["on"], *self.GAME_OVER_NOTIFICATION.values()]
         )
-
-        try:
-            self.page.wait_for_selector(
-                selector, timeout=settings.WAIT_FOR_TURN_TIMEOUT
-            )
-        except Error:
-            raise RuntimeError("Timeout while waiting for your turn")
-
+        self._wait_for_selector(selector, timeout=settings.WAIT_FOR_TURN_TIMEOUT)
         return self.get_game_result()
 
     def get_empty_cells(self) -> List[Coordinate]:
-        cells: List[Coordinate] = []
-        elements = self.page.locator(self.RIVAL_EMPTY_CELLS).all()
-        for el in elements:
-            x = int(el.get_attribute("data-x"))
-            y = int(el.get_attribute("data-y"))
-            cells.append((x, y))
-        return cells
+        elements = self._get_elements(self.RIVAL_EMPTY_CELLS)
+        return [
+            (int(el.get_attribute("data-x")), int(el.get_attribute("data-y")))
+            for el in elements
+        ]
 
     def shoot(self, x: int, y: int) -> ShotResult:
         selector = self.EMPTY_CELL_SELECTOR_TEMPLATE.format(x=x, y=y)
-        cell = self.page.locator(selector)
-        cell.first.wait_for(state="visible", timeout=5000)
-        cell.first.click()
+        self._click(selector)
         return self.get_cell_status(x, y)
 
     def get_cell_status(self, x: int, y: int) -> ShotResult:
-        last_cell = self.page.locator(self.LAST_CELL_SELECTOR_TEMPLATE.format(x=x, y=y))
-        last_cell.wait_for(state="visible", timeout=10000)
-
+        last_cell = self._get_element(self.LAST_CELL_SELECTOR_TEMPLATE.format(x=x, y=y))
+        last_cell.wait_for(state="visible")
         td = last_cell.locator("..")
         cell_class = td.get_attribute("class") or ""
 
@@ -107,12 +91,7 @@ class BattlePage(GameUI):
         raise RuntimeError(f"Unknown result for cell ({x},{y})")
 
     def get_game_result(self) -> Optional[GameResult]:
-        if self.page.locator(self.GAME_OVER_NOTIFICATION["win"]).count():
-            return GameResult.WIN
-        if self.page.locator(self.GAME_OVER_NOTIFICATION["lose"]).count():
-            return GameResult.LOSE
-        if self.page.locator(self.GAME_OVER_NOTIFICATION["opponent_left"]).count():
-            return GameResult.OPPONENT_LEFT
-        if self.page.locator(self.GAME_OVER_NOTIFICATION["server_error"]).count():
-            return GameResult.SERVER_ERROR
+        for key, value in self.GAME_OVER_NOTIFICATION.items():
+            if self.page.locator(value).count():
+                return getattr(GameResult, key.upper())
         return None
