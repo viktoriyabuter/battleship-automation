@@ -1,3 +1,5 @@
+from typing import Optional
+
 from domain.interfaces.game_ui import GameUI
 from domain.strategy.strategy import Strategy
 from domain.enums.shot_result import ShotResult
@@ -11,7 +13,7 @@ def run_game(ui: GameUI) -> GameResult:
     strategy: Strategy = Strategy(ui)
 
     for turn in range(MAX_TURNS):
-        game_result: GameResult | None = ui.wait_for_game_event()
+        game_result: Optional[GameResult] = ui.wait_for_game_event()
 
         if game_result is not None:
             return game_result
