@@ -1,6 +1,8 @@
 import random
 from playwright.sync_api import Page
 
+from config.settings import settings
+
 
 class StartPage:
     RANDOM_OPPONENT_BUTTON = (
@@ -11,6 +13,9 @@ class StartPage:
 
     def __init__(self, page: Page):
         self.page = page
+
+    def open(self):
+        self.page.goto(settings.BASE_URL)
 
     def select_random_opponent(self) -> None:
         self.page.wait_for_selector(self.RANDOM_OPPONENT_BUTTON, timeout=30_000)

@@ -19,7 +19,7 @@ python -m venv .venv
 pip install -r requirements.txt
 playwright install
 
-python application/run_battleship.py
+pytest -v
 ```
 
 ---
