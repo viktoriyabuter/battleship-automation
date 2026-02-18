@@ -19,7 +19,7 @@ python -m venv .venv
 pip install -r requirements.txt
 playwright install
 
-python application/run_battleship.py
+python -m application.run_battleship
 ```
 
 ---
@@ -54,6 +54,7 @@ Once the bot registers a hit, it switches behavior:
 8. Repeat until the game ends.
 
 ---
+
 
 
 
